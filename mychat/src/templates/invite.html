@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>You're Invited!</title>
+    <style>
+      body {
+        font-family: "Segoe UI", sans-serif;
+        background-color: #f4f4f4;
+        color: #333;
+        padding: 40px;
+      }
+      .container {
+        max-width: 600px;
+        margin: auto;
+        background: white;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 0 12px rgba(0, 0, 0, 0.05);
+      }
+      .header {
+        text-align: center;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+      }
+      .btn {
+        display: inline-block;
+        padding: 12px 24px;
+        background-color: #90d5ff;
+        color: white;
+        text-decoration: none;
+        border-radius: 6px;
+        font-weight: bold;
+      }
+      .footer {
+        margin-top: 30px;
+        font-size: 12px;
+        color: #777;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h2>You're Invited!</h2>
+      </div>
+
+      <p>Hello,</p>
+
+      <p>
+        <strong>{{ sender_name }}</strong> has invited you to join our platform.
+      </p>
+
+      <p>To accept the invitation, please click the button below:</p>
+
+      <p style="text-align: center">
+        <a href="{{ invite_url }}" class="btn">Accept Invitation</a>
+      </p>
+
+      <p>
+        If the button doesn’t work, you can also copy and paste this link into
+        your browser:
+      </p>
+      <p><a href="{{ invite_url }}">{{ invite_url }}</a></p>
+
+      <div class="footer">
+        <p>
+          This invite will expire soon. Please don’t share this link with
+          others.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>
