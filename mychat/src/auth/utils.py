@@ -1,5 +1,5 @@
 from passlib.context import CryptContext
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from jose import jwt
 from src.config import Config
 import uuid
@@ -30,7 +30,8 @@ def create_access_token(
         expiry = timedelta(seconds=ACCESS_TOKEN_EXPIRY)
 
     payload["user"] = user_data
-    payload["exp"] = datetime.now() + expiry
+    payload["exp"] = datetime.now(timezone.utc) + expiry
+
     payload["jti"] = str(uuid.uuid4())
 
     payload["refresh"] = refresh
@@ -45,12 +46,14 @@ def create_access_token(
 def decode_token(token: str) -> dict:
 
     try:
+
         token_data = jwt.decode(
             token, key=Config.JWT_SECRET, algorithms=[Config.JWT_ALGORITHM]
         )
 
+        print(token_data)
         return token_data
-    except jwt.PyJWTError as e:
+    except jwt.JWTError as e:
         logging.exception(e)
 
         return None

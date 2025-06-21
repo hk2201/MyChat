@@ -1,7 +1,8 @@
+from datetime import datetime, timezone
 from fastapi.security import HTTPBearer
 from fastapi import Request, WebSocket, status, Depends
 from fastapi.security.http import HTTPAuthorizationCredentials
-from jose import JWTError
+from jose import JWTError, jwt
 from .utils import decode_token
 from fastapi.exceptions import HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -111,6 +112,7 @@ async def get_user_id_from_socket(websocket: WebSocket):
         raise HTTPException(status_code=403, detail="Missing token")
 
     try:
+
         payload = decode_token(token)
         return payload["user"]["user_uid"]
     except JWTError:
