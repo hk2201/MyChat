@@ -1,69 +1,86 @@
-// src/pages/ChatPage.jsx
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import { Search, MessageCircle, LogOut, Mail, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import {
-  Search,
-  Send,
-  MessageCircle,
-  Users,
-  LogOut,
-  UserPlus,
-  Clock,
-  Mail,
-} from "lucide-react";
-import "./ChatPage.css";
 
 export default function ChatPage() {
+  const navigate = useNavigate();
+
   const [search, setSearch] = useState("");
   const [results, setResults] = useState([]);
   const [chats, setChats] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
-  const navigate = useNavigate();
+  const [currentUser, setCurrentUser] = useState({ name: "John Doe" });
 
-  const token = localStorage.getItem("token");
-  const authHeader = { headers: { Authorization: `Bearer ${token}` } };
-
-  const fetchChats = async () => {
-    try {
-      const res = await axios.get("/api/v1/chat/history", authHeader);
-      setChats(res.data);
-    } catch (error) {
-      console.error("Error fetching chats:", error);
-    }
-  };
-
-  const fetchCurrentUser = async () => {
-    try {
-      const res = await axios.get("/api/v1/user/profile", authHeader);
-      setCurrentUser(res.data);
-    } catch (error) {
-      console.error("Error fetching user profile:", error);
-    }
-  };
-
+  // Mock data for demo
   useEffect(() => {
-    fetchChats();
-    fetchCurrentUser();
+    // Simulate fetching data
+    setChats([
+      {
+        id: 1,
+        user: {
+          id: 1,
+          name: "Alice Johnson",
+          username: "alice",
+          isOnline: true,
+        },
+        lastMessage: "Hey, how are you doing?",
+        lastMessageTime: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+        unreadCount: 2,
+      },
+      {
+        id: 2,
+        user: { id: 2, name: "Bob Smith", username: "bob", isOnline: false },
+        lastMessage: "Thanks for the help!",
+        lastMessageTime: new Date(
+          Date.now() - 2 * 60 * 60 * 1000
+        ).toISOString(),
+        unreadCount: 0,
+      },
+      {
+        id: 3,
+        user: {
+          id: 3,
+          name: "Carol Wilson",
+          username: "carol",
+          isOnline: true,
+        },
+        lastMessage: "See you tomorrow",
+        lastMessageTime: new Date(
+          Date.now() - 24 * 60 * 60 * 1000
+        ).toISOString(),
+        unreadCount: 1,
+      },
+    ]);
   }, []);
 
   const handleSearch = async () => {
     if (!search.trim()) return;
 
     setIsSearching(true);
-    try {
-      const res = await axios.get(
-        `/api/v1/users/search?query=${encodeURIComponent(search)}`,
-        authHeader
+    // Simulate API call
+    setTimeout(() => {
+      const mockResults = [
+        {
+          id: 4,
+          name: "David Lee",
+          username: "david",
+          email: "david@example.com",
+        },
+        {
+          id: 5,
+          name: "Emma Davis",
+          username: "emma",
+          email: "emma@example.com",
+        },
+      ].filter(
+        (user) =>
+          user.name.toLowerCase().includes(search.toLowerCase()) ||
+          user.username.toLowerCase().includes(search.toLowerCase()) ||
+          user.email.toLowerCase().includes(search.toLowerCase())
       );
-      setResults(res.data);
-    } catch (error) {
-      console.error("Search error:", error);
-      setResults([]);
-    } finally {
+      setResults(mockResults);
       setIsSearching(false);
-    }
+    }, 1000);
   };
 
   const handleKeyPress = (e) => {
@@ -72,21 +89,20 @@ export default function ChatPage() {
     }
   };
 
-  const handleInvite = async () => {
-    if (!search.trim()) return;
-
-    try {
-      await axios.post("/api/v1/invite", { email: search }, authHeader);
-      alert("Invite sent successfully!");
-      setSearch("");
-    } catch (error) {
-      console.error("Invite error:", error);
-      alert("Failed to send invite. Please try again.");
-    }
+  const handleInvite = () => {
+    alert(`Invite sent to ${search}!`);
+    setSearch("");
   };
 
   const handleUserClick = (userId) => {
-    navigate(`/chat/${userId}`);
+    console.log(`Navigate to chat with user ${userId}`);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    // localStorage.removeItem("user");
+    navigate("/login");
   };
 
   const formatTime = (timestamp) => {
@@ -95,7 +111,9 @@ export default function ChatPage() {
     const now = new Date();
     const diffInHours = (now - date) / (1000 * 60 * 60);
 
-    if (diffInHours < 24) {
+    if (diffInHours < 1) {
+      return "Just now";
+    } else if (diffInHours < 24) {
       return date.toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
@@ -117,75 +135,341 @@ export default function ChatPage() {
       .slice(0, 2);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/login");
-  };
-
   const isValidEmail = (email) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
+  const styles = {
+    container: {
+      minHeight: "100vh",
+      backgroundColor: "#f8f9fa",
+      fontFamily:
+        "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    },
+    content: {
+      maxWidth: "800px",
+      margin: "0 auto",
+      padding: "20px",
+    },
+    header: {
+      textAlign: "center",
+      marginBottom: "30px",
+      backgroundColor: "white",
+      padding: "20px",
+      borderRadius: "8px",
+      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+    },
+    title: {
+      fontSize: "24px",
+      color: "#333",
+      margin: "0 0 8px 0",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: "8px",
+    },
+    subtitle: {
+      color: "#666",
+      margin: 0,
+    },
+    searchSection: {
+      backgroundColor: "white",
+      padding: "20px",
+      borderRadius: "8px",
+      marginBottom: "20px",
+      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+    },
+    searchContainer: {
+      display: "flex",
+      gap: "8px",
+      marginBottom: "16px",
+    },
+    searchInput: {
+      flex: 1,
+      padding: "12px 16px",
+      border: "1px solid #ddd",
+      borderRadius: "6px",
+      fontSize: "14px",
+      outline: "none",
+    },
+    searchButton: {
+      padding: "12px 20px",
+      backgroundColor: "#007bff",
+      color: "white",
+      border: "none",
+      borderRadius: "6px",
+      cursor: "pointer",
+      display: "flex",
+      alignItems: "center",
+      gap: "6px",
+      fontSize: "14px",
+    },
+    resultsSection: {
+      marginTop: "16px",
+    },
+    resultsTitle: {
+      fontSize: "16px",
+      fontWeight: "600",
+      color: "#333",
+      marginBottom: "12px",
+      display: "flex",
+      alignItems: "center",
+      gap: "8px",
+    },
+    userCard: {
+      display: "flex",
+      alignItems: "center",
+      padding: "12px",
+      border: "1px solid #e9ecef",
+      borderRadius: "6px",
+      marginBottom: "8px",
+      cursor: "pointer",
+      transition: "background-color 0.2s",
+    },
+    userAvatar: {
+      width: "40px",
+      height: "40px",
+      borderRadius: "50%",
+      backgroundColor: "#007bff",
+      color: "white",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontSize: "14px",
+      fontWeight: "600",
+      marginRight: "12px",
+    },
+    userInfo: {
+      flex: 1,
+    },
+    userName: {
+      fontSize: "14px",
+      fontWeight: "600",
+      color: "#333",
+      margin: "0 0 4px 0",
+    },
+    userDetails: {
+      fontSize: "12px",
+      color: "#666",
+      margin: 0,
+    },
+    inviteSection: {
+      textAlign: "center",
+      padding: "20px",
+      backgroundColor: "#f8f9fa",
+      borderRadius: "6px",
+      marginTop: "16px",
+    },
+    inviteMessage: {
+      color: "#666",
+      marginBottom: "12px",
+    },
+    inviteButton: {
+      padding: "10px 16px",
+      backgroundColor: "#28a745",
+      color: "white",
+      border: "none",
+      borderRadius: "6px",
+      cursor: "pointer",
+      display: "inline-flex",
+      alignItems: "center",
+      gap: "6px",
+      fontSize: "14px",
+    },
+    chatHistory: {
+      backgroundColor: "white",
+      padding: "20px",
+      borderRadius: "8px",
+      marginBottom: "20px",
+      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+    },
+    sectionTitle: {
+      fontSize: "18px",
+      fontWeight: "600",
+      color: "#333",
+      marginBottom: "16px",
+      display: "flex",
+      alignItems: "center",
+      gap: "8px",
+    },
+    chatList: {
+      listStyle: "none",
+      padding: 0,
+      margin: 0,
+    },
+    chatItem: {
+      display: "flex",
+      alignItems: "center",
+      padding: "12px",
+      borderRadius: "6px",
+      marginBottom: "8px",
+      cursor: "pointer",
+      transition: "background-color 0.2s",
+    },
+    chatAvatar: {
+      position: "relative",
+      width: "48px",
+      height: "48px",
+      borderRadius: "50%",
+      backgroundColor: "#6c757d",
+      color: "white",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontSize: "16px",
+      fontWeight: "600",
+      marginRight: "12px",
+    },
+    onlineStatus: {
+      position: "absolute",
+      bottom: "2px",
+      right: "2px",
+      width: "12px",
+      height: "12px",
+      backgroundColor: "#28a745",
+      borderRadius: "50%",
+      border: "2px solid white",
+    },
+    chatDetails: {
+      flex: 1,
+      minWidth: 0,
+    },
+    chatName: {
+      fontSize: "16px",
+      fontWeight: "600",
+      color: "#333",
+      margin: "0 0 4px 0",
+    },
+    lastMessage: {
+      fontSize: "14px",
+      color: "#666",
+      margin: 0,
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap",
+    },
+    chatMeta: {
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "flex-end",
+      gap: "4px",
+    },
+    chatTime: {
+      fontSize: "12px",
+      color: "#999",
+    },
+    unreadBadge: {
+      backgroundColor: "#dc3545",
+      color: "white",
+      borderRadius: "10px",
+      padding: "2px 6px",
+      fontSize: "12px",
+      minWidth: "18px",
+      textAlign: "center",
+    },
+    emptyState: {
+      textAlign: "center",
+      padding: "40px 20px",
+      color: "#666",
+    },
+    emptyIcon: {
+      marginBottom: "16px",
+      opacity: 0.5,
+    },
+    emptyTitle: {
+      fontSize: "18px",
+      marginBottom: "8px",
+      color: "#333",
+    },
+    emptyMessage: {
+      fontSize: "14px",
+    },
+    footer: {
+      textAlign: "center",
+    },
+    logoutButton: {
+      padding: "10px 20px",
+      backgroundColor: "#dc3545",
+      color: "white",
+      border: "none",
+      borderRadius: "6px",
+      cursor: "pointer",
+      display: "inline-flex",
+      alignItems: "center",
+      gap: "8px",
+      fontSize: "14px",
+    },
+  };
+
   return (
-    <div className="chat-page">
-      <div className="chat-page-content">
+    <div style={styles.container}>
+      <style>
+        {`
+          .user-card:hover { background-color: #f8f9fa; }
+          .chat-item:hover { background-color: #f8f9fa; }
+          .search-button:hover { background-color: #0056b3; }
+          .search-button:disabled { opacity: 0.6; cursor: not-allowed; }
+          .invite-button:hover { background-color: #218838; }
+          .logout-button:hover { background-color: #c82333; }
+        `}
+      </style>
+
+      <div style={styles.content}>
         {/* Header */}
-        <div className="chat-header">
-          <h1 className="chat-title">
-            <MessageCircle
-              size={32}
-              style={{ display: "inline", marginRight: "12px" }}
-            />
+        <div style={styles.header}>
+          <h1 style={styles.title}>
+            <MessageCircle size={24} />
             ChatApp
           </h1>
-          <p className="chat-subtitle">
-            Welcome back, {currentUser?.name || currentUser?.username || "User"}
-            !
+          <p style={styles.subtitle}>
+            Welcome back, {currentUser?.name || "User"}!
           </p>
         </div>
 
         {/* Search Section */}
-        <div className="search-section">
-          <div className="search-container">
-            <div className="search-input-group">
-              <input
-                type="text"
-                placeholder="Search users by name, username or email..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onKeyPress={handleKeyPress}
-                className="search-input"
-              />
-              <button
-                onClick={handleSearch}
-                className="search-button"
-                disabled={isSearching}
-              >
-                <Search size={20} />
-                {isSearching ? "Searching..." : "Search"}
-              </button>
-            </div>
+        <div style={styles.searchSection}>
+          <div style={styles.searchContainer}>
+            <input
+              type="text"
+              placeholder="Search users by name, username or email..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyPress={handleKeyPress}
+              style={styles.searchInput}
+            />
+            <button
+              onClick={handleSearch}
+              style={styles.searchButton}
+              className="search-button"
+              disabled={isSearching}
+            >
+              <Search size={16} />
+              {isSearching ? "Searching..." : "Search"}
+            </button>
           </div>
 
           {/* Search Results */}
           {results.length > 0 && (
-            <div className="search-results">
-              <h3 className="results-title">
-                <Users size={20} />
+            <div style={styles.resultsSection}>
+              <h3 style={styles.resultsTitle}>
+                <Users size={16} />
                 Search Results ({results.length})
               </h3>
               {results.map((user) => (
                 <div
                   key={user.id}
                   onClick={() => handleUserClick(user.id)}
+                  style={styles.userCard}
                   className="user-card"
                 >
-                  <div className="user-avatar">
+                  <div style={styles.userAvatar}>
                     {getInitials(user.name || user.username)}
                   </div>
-                  <div className="user-info">
-                    <h3>{user.name || user.username}</h3>
-                    <p>
+                  <div style={styles.userInfo}>
+                    <h3 style={styles.userName}>
+                      {user.name || user.username}
+                    </h3>
+                    <p style={styles.userDetails}>
                       @{user.username} • {user.email}
                     </p>
                   </div>
@@ -196,15 +480,19 @@ export default function ChatPage() {
 
           {/* Invite Section */}
           {search && results.length === 0 && !isSearching && (
-            <div className="invite-section">
-              <p className="invite-message">
+            <div style={styles.inviteSection}>
+              <p style={styles.inviteMessage}>
                 {isValidEmail(search)
                   ? `No user found with "${search}". Would you like to send an invite?`
                   : "No users found. Try searching with an email address to send an invite."}
               </p>
               {isValidEmail(search) && (
-                <button onClick={handleInvite} className="invite-button">
-                  <Mail size={20} />
+                <button
+                  onClick={handleInvite}
+                  style={styles.inviteButton}
+                  className="invite-button"
+                >
+                  <Mail size={16} />
                   Send Invite to {search}
                 </button>
               )}
@@ -213,50 +501,53 @@ export default function ChatPage() {
         </div>
 
         {/* Chat History */}
-        <div className="chat-history">
-          <h2 className="section-title">
-            <MessageCircle size={24} />
+        <div style={styles.chatHistory}>
+          <h2 style={styles.sectionTitle}>
+            <MessageCircle size={20} />
             Recent Chats
           </h2>
 
           {chats.length > 0 ? (
-            <ul className="chat-list">
+            <ul style={styles.chatList}>
               {chats.map((chat) => (
                 <li
                   key={chat.id}
                   onClick={() => handleUserClick(chat.user.id)}
+                  style={styles.chatItem}
                   className="chat-item"
                 >
-                  <div className="chat-avatar">
+                  <div style={styles.chatAvatar}>
                     {getInitials(chat.user.name || chat.user.username)}
                     {chat.user.isOnline && (
-                      <div className="online-status"></div>
+                      <div style={styles.onlineStatus}></div>
                     )}
                   </div>
-                  <div className="chat-details">
-                    <h3>{chat.user.name || chat.user.username}</h3>
-                    <p className="last-message">
+                  <div style={styles.chatDetails}>
+                    <h3 style={styles.chatName}>
+                      {chat.user.name || chat.user.username}
+                    </h3>
+                    <p style={styles.lastMessage}>
                       {chat.lastMessage || "Start a conversation..."}
                     </p>
                   </div>
-                  <div className="chat-meta">
-                    <span className="chat-time">
+                  <div style={styles.chatMeta}>
+                    <span style={styles.chatTime}>
                       {formatTime(chat.lastMessageTime)}
                     </span>
                     {chat.unreadCount > 0 && (
-                      <span className="unread-badge">{chat.unreadCount}</span>
+                      <span style={styles.unreadBadge}>{chat.unreadCount}</span>
                     )}
                   </div>
                 </li>
               ))}
             </ul>
           ) : (
-            <div className="empty-state">
-              <div className="empty-icon">
-                <MessageCircle size={32} />
+            <div style={styles.emptyState}>
+              <div style={styles.emptyIcon}>
+                <MessageCircle size={48} />
               </div>
-              <h3 className="empty-title">No conversations yet</h3>
-              <p className="empty-message">
+              <h3 style={styles.emptyTitle}>No conversations yet</h3>
+              <p style={styles.emptyMessage}>
                 Search for users above to start your first conversation!
               </p>
             </div>
@@ -264,9 +555,13 @@ export default function ChatPage() {
         </div>
 
         {/* Footer */}
-        <div className="chat-footer">
-          <button onClick={handleLogout} className="logout-button">
-            <LogOut size={20} />
+        <div style={styles.footer}>
+          <button
+            onClick={handleLogout}
+            style={styles.logoutButton}
+            className="logout-button"
+          >
+            <LogOut size={16} />
             Logout
           </button>
         </div>

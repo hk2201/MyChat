@@ -14,11 +14,19 @@ function App() {
       <Route
         path="/chat"
         element={
+          <PrivateRoute>
             <ChatPage />
-
+          </PrivateRoute>
         }
       />
-      <Route path="/chat/:userId" element={<ChatRoomPage />} />
+      <Route
+        path="/chat/:userId"
+        element={
+          <PrivateRoute>
+            <ChatRoomPage />
+          </PrivateRoute>
+        }
+      />
     </Routes>
   );
 }
