@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: backMychat
+    env: python
+    branch: master
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port 8000
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_SERVER
+        value: smtp.gmail.com
+      - key: MAIL_PORT
+        value: 587
+      - key: MAIL_FROM
+        value: harshadkhandare9000@gmail.com
+      - key: MAIL_FROM_NAME
+        value: MyChat
+      - key: DOMAIN
+        value: backmychat.onrender.com
+
