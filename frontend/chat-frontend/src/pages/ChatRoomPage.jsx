@@ -45,7 +45,7 @@ export default function ChatRoomPage() {
 
   useEffect(() => {
     const ws = new WebSocket(
-      `ws://127.0.0.1:8000/api/v1/chats/ws?token=${token}`
+      `wss://mychat-brfy.onrender.com/api/v1/chats/ws?token=${token}`
     );
 
     ws.onopen = () => {
@@ -83,9 +83,9 @@ export default function ChatRoomPage() {
     const fetchData = async () => {
       try {
         const [msgRes, userRes, selfRes] = await Promise.all([
-          axios.get(`/api/v1/chats/messages/${userId}`, authHeader),
-          axios.get(`/api/v1/user/${userId}`, authHeader),
-          axios.get(`/api/v1/user/me`, authHeader),
+          axios.get(`https://mychat-brfy.onrender.com/api/v1/chats/messages/${userId}`, authHeader),
+          axios.get(`https://mychat-brfy.onrender.com/api/v1/user/${userId}`, authHeader),
+          axios.get(`https://mychat-brfy.onrender.com/api/v1/user/me`, authHeader),
         ]);
 
         setMessages(msgRes.data);

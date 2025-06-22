@@ -21,7 +21,7 @@ export default function ChatPage() {
 
       try {
         const response = await fetch(
-          "http://127.0.0.1:8000/api/v1/chats/chatted-users",
+          "https://mychat-brfy.onrender.com/api/v1/chats/chatted-users",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -54,7 +54,7 @@ export default function ChatPage() {
     setIsSearching(true);
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/api/v1/user/search?query=${encodeURIComponent(
+        `https://mychat-brfy.onrender.com/api/v1/user/search?query=${encodeURIComponent(
           search
         )}`,
         {
