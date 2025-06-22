@@ -36,7 +36,7 @@ export default function SignupPage() {
       if (response.ok) {
         alert("Account created successfully!");
         // Redirect to login page - you can replace this with your routing logic
-        window.location.href = "/login";
+        window.location.href = "/";
       } else {
         const errorData = await response.json();
         alert(`Error: ${errorData.message || "Failed to create account"}`);

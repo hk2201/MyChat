@@ -102,7 +102,7 @@ export default function ChatPage() {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
     // localStorage.removeItem("user");
-    navigate("/login");
+    navigate("/");
   };
 
   const formatTime = (timestamp) => {
