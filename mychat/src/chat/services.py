@@ -19,6 +19,32 @@ class ChatService:
         await session.commit()
         return new_msg
 
+    async def get_all_chatted_users(self, current_user: User, session: AsyncSession):
+        stmt = (
+            select(User)
+            .where(
+                or_(
+                    User.uid.in_(
+                        select(Message.recipient_id).where(
+                            Message.sender_id == current_user.uid
+                        )
+                    ),
+                    User.uid.in_(
+                        select(Message.sender_id).where(
+                            Message.recipient_id == current_user.uid
+                        )
+                    ),
+                )
+            )
+            .where(User.uid != current_user.uid)  # exclude self
+            .distinct()
+        )
+
+        result = await session.exec(stmt)
+        users = result.all()
+
+        return users
+
     async def get_chat_user(
         self, user_id: uuid.UUID, current_user: User, session: AsyncSession
     ):

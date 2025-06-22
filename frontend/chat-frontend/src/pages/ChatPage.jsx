@@ -7,80 +7,79 @@ export default function ChatPage() {
 
   const [search, setSearch] = useState("");
   const [results, setResults] = useState([]);
-  const [chats, setChats] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [chattedUsers, setChattedUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
+
   const [currentUser, setCurrentUser] = useState({ name: "John Doe" });
 
   // Mock data for demo
   useEffect(() => {
-    // Simulate fetching data
-    setChats([
-      {
-        id: 1,
-        user: {
-          id: 1,
-          name: "Alice Johnson",
-          username: "alice",
-          isOnline: true,
-        },
-        lastMessage: "Hey, how are you doing?",
-        lastMessageTime: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-        unreadCount: 2,
-      },
-      {
-        id: 2,
-        user: { id: 2, name: "Bob Smith", username: "bob", isOnline: false },
-        lastMessage: "Thanks for the help!",
-        lastMessageTime: new Date(
-          Date.now() - 2 * 60 * 60 * 1000
-        ).toISOString(),
-        unreadCount: 0,
-      },
-      {
-        id: 3,
-        user: {
-          id: 3,
-          name: "Carol Wilson",
-          username: "carol",
-          isOnline: true,
-        },
-        lastMessage: "See you tomorrow",
-        lastMessageTime: new Date(
-          Date.now() - 24 * 60 * 60 * 1000
-        ).toISOString(),
-        unreadCount: 1,
-      },
-    ]);
+    const fetchChattedUsers = async () => {
+      setLoading(true);
+      const token = localStorage.getItem("access_token");
+
+      try {
+        const response = await fetch(
+          "http://127.0.0.1:8000/api/v1/chats/chatted-users",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch chatted users");
+        }
+
+        const data = await response.json();
+        setChattedUsers(data);
+      } catch (error) {
+        console.error("Error fetching chatted users:", error);
+        setChattedUsers([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchChattedUsers();
   }, []);
 
   const handleSearch = async () => {
     if (!search.trim()) return;
+    const token = localStorage.getItem("access_token");
 
     setIsSearching(true);
-    // Simulate API call
-    setTimeout(() => {
-      const mockResults = [
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/v1/user/search?query=${encodeURIComponent(
+          search
+        )}`,
         {
-          id: 4,
-          name: "David Lee",
-          username: "david",
-          email: "david@example.com",
-        },
-        {
-          id: 5,
-          name: "Emma Davis",
-          username: "emma",
-          email: "emma@example.com",
-        },
-      ].filter(
-        (user) =>
-          user.name.toLowerCase().includes(search.toLowerCase()) ||
-          user.username.toLowerCase().includes(search.toLowerCase()) ||
-          user.email.toLowerCase().includes(search.toLowerCase())
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`, // replace with actual token logic
+          },
+        }
       );
-      setResults(mockResults);
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch users");
+      }
+
+      const data = await response.json();
+
+      // data is expected to be a list of users (List[UserRead])
+      setResults(data);
+    } catch (error) {
+      console.error("Search error:", error);
+      setResults([]);
+    } finally {
       setIsSearching(false);
-    }, 1000);
+    }
   };
 
   const handleKeyPress = (e) => {
@@ -96,6 +95,7 @@ export default function ChatPage() {
 
   const handleUserClick = (userId) => {
     console.log(`Navigate to chat with user ${userId}`);
+    navigate(`/chat/${userId}`);
   };
 
   const handleLogout = () => {
@@ -421,9 +421,6 @@ export default function ChatPage() {
             <MessageCircle size={24} />
             ChatApp
           </h1>
-          <p style={styles.subtitle}>
-            Welcome back, {currentUser?.name || "User"}!
-          </p>
         </div>
 
         {/* Search Section */}
@@ -507,37 +504,27 @@ export default function ChatPage() {
             Recent Chats
           </h2>
 
-          {chats.length > 0 ? (
+          {chattedUsers.length > 0 ? (
             <ul style={styles.chatList}>
-              {chats.map((chat) => (
+              {chattedUsers.map((user) => (
                 <li
-                  key={chat.id}
-                  onClick={() => handleUserClick(chat.user.id)}
+                  key={user.uid}
+                  onClick={() => handleUserClick(user.uid)}
                   style={styles.chatItem}
                   className="chat-item"
                 >
                   <div style={styles.chatAvatar}>
-                    {getInitials(chat.user.name || chat.user.username)}
-                    {chat.user.isOnline && (
-                      <div style={styles.onlineStatus}></div>
-                    )}
+                    {getInitials(`${user.first_name} ${user.last_name}`)}
                   </div>
                   <div style={styles.chatDetails}>
                     <h3 style={styles.chatName}>
-                      {chat.user.name || chat.user.username}
+                      {user.first_name} {user.last_name}
                     </h3>
                     <p style={styles.lastMessage}>
-                      {chat.lastMessage || "Start a conversation..."}
+                      @{user.username} • {user.email}
                     </p>
                   </div>
-                  <div style={styles.chatMeta}>
-                    <span style={styles.chatTime}>
-                      {formatTime(chat.lastMessageTime)}
-                    </span>
-                    {chat.unreadCount > 0 && (
-                      <span style={styles.unreadBadge}>{chat.unreadCount}</span>
-                    )}
-                  </div>
+                  {/* You can optionally add chatMeta if you later get last message info */}
                 </li>
               ))}
             </ul>

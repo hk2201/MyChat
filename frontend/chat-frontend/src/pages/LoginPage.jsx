@@ -316,7 +316,11 @@ export default function LoginPage() {
 
         <div style={styles.signupLink}>
           Don't have an account?{" "}
-          <button style={styles.signupButton} className="signup-btn">
+          <button
+            style={styles.signupButton}
+            className="signup-btn"
+            onClick={() => navigate("/signup")}
+          >
             Sign up
           </button>
         </div>

@@ -13,9 +13,11 @@ export default function ChatRoomPage() {
   const [recipient, setRecipient] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
   const [isOnline, setIsOnline] = useState(false);
+  const [socket, setSocket] = useState(null);
+  const [currentUserId, setCurrentUserId] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("access_token");
 
   const authHeader = {
     headers: { Authorization: `Bearer ${token}` },
@@ -42,44 +44,105 @@ export default function ChatRoomPage() {
   }, [input]);
 
   useEffect(() => {
-    const fetchMessages = async () => {
-      try {
-        const res = await axios.get(`/api/v1/messages/${userId}`, authHeader);
-        setMessages(res.data);
+    const ws = new WebSocket(
+      `ws://127.0.0.1:8000/api/v1/chats/ws?token=${token}`
+    );
 
-        // Fetch recipient info (you might need to adjust this endpoint)
-        const recipientRes = await axios.get(
-          `/api/v1/users/${userId}`,
-          authHeader
-        );
-        setRecipient(recipientRes.data);
-        setIsOnline(recipientRes.data.isOnline || Math.random() > 0.5); // Mock online status
-      } catch (error) {
-        console.error("Error fetching messages:", error);
+    ws.onopen = () => {
+      console.log("WebSocket connected");
+    };
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log("Received:", data);
+
+      // Only add if message is from the current chat recipient
+      if (data.sender_id === userId || data.recipient_id === userId) {
+        setMessages((prev) => [...prev, data]);
       }
     };
-    fetchMessages();
+
+    ws.onerror = (error) => {
+      console.error("WebSocket error:", error);
+    };
+
+    ws.onclose = () => {
+      console.log("WebSocket disconnected");
+    };
+
+    // Save socket to state if needed
+    setSocket(ws);
+
+    // Cleanup on unmount
+    return () => {
+      ws.close();
+    };
+  }, [userId]); // separate this effect from fetchData
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [msgRes, userRes, selfRes] = await Promise.all([
+          axios.get(`/api/v1/chats/messages/${userId}`, authHeader),
+          axios.get(`/api/v1/user/${userId}`, authHeader),
+          axios.get(`/api/v1/user/me`, authHeader),
+        ]);
+
+        setMessages(msgRes.data);
+        setRecipient(userRes.data);
+        setCurrentUserId(selfRes.data.uid);
+        // setIsOnline(userRes.data.isOnline || Math.random() > 0.5);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+
+    fetchData();
   }, [userId]);
 
   const sendMessage = async () => {
-    if (!input.trim()) return;
+    // if (!input.trim()) return;
 
-    const newMessage = { sender: "me", content: input, timestamp: new Date() };
+    // const newMessage = {
+    //   content: input,
+    //   timestamp: new Date().toISOString(),
+    //   sender_id: currentUserId,
+    //   recipient_id: userId,
+    // };
 
-    try {
-      await axios.post(
-        "/api/v1/messages/",
-        {
-          recipient_id: userId,
-          content: input,
-        },
-        authHeader
-      );
-      setMessages((prev) => [...prev, newMessage]);
-      setInput("");
-    } catch (error) {
-      console.error("Error sending message:", error);
-    }
+    // try {
+    //   await axios.post(
+    //     "/api/v1/chats/messages/send",
+    //     {
+    //       recipient_id: userId,
+    //       content: input,
+    //     },
+    //     authHeader
+    //   );
+    //   setMessages((prev) => [...prev, newMessage]);
+    //   setInput("");
+    // } catch (error) {
+    //   console.error("Error sending message:", error);
+    // }
+
+    if (!input.trim() || !socket) return;
+
+    const payload = {
+      content: input,
+      recipient_id: userId,
+    };
+
+    socket.send(JSON.stringify(payload));
+
+    const newMessage = {
+      sender_id: currentUserId,
+      recipient_id: userId,
+      content: input,
+      timestamp: new Date().toISOString(),
+    };
+
+    setMessages((prev) => [...prev, newMessage]);
+    setInput("");
   };
 
   const handleKeyPress = (e) => {
@@ -139,7 +202,7 @@ export default function ChatRoomPage() {
           <div className="user-info">
             <div className="avatar-container">
               <div className="avatar">
-                {recipient?.name?.charAt(0)?.toUpperCase() ||
+                {recipient?.first_name?.charAt(0)?.toUpperCase() ||
                   userId?.charAt(0)?.toUpperCase() ||
                   "U"}
               </div>
@@ -147,7 +210,10 @@ export default function ChatRoomPage() {
             </div>
 
             <div className="user-details">
-              <h1>{recipient?.name || `User ${userId}`}</h1>
+              <h1>
+                {recipient?.first_name + " " + recipient?.last_name ||
+                  `User ${userId}`}
+              </h1>
               <p>{isOnline ? "Online" : "Last seen recently"}</p>
             </div>
           </div>
@@ -170,16 +236,13 @@ export default function ChatRoomPage() {
       <div className="messages-container">
         {Object.entries(messageGroups).map(([date, msgs]) => (
           <div key={date} className="message-group">
-            {/* Date Separator */}
             <div className="date-separator">
               <div className="date-badge">{date}</div>
             </div>
-
-            {/* Messages for this date */}
             {msgs.map((msg, i) => {
-              const isMe = msg.sender === "me";
+              const isMe = msg.sender_id === currentUserId;
               const showAvatar =
-                !isMe && (i === 0 || msgs[i - 1]?.sender !== msg.sender);
+                !isMe && (i === 0 || msgs[i - 1]?.sender_id !== msg.sender_id);
 
               return (
                 <div
@@ -189,18 +252,11 @@ export default function ChatRoomPage() {
                   <div
                     className={`message-content ${isMe ? "sent" : "received"}`}
                   >
-                    {/* Avatar for received messages */}
-                    {!isMe && (
-                      <div className="message-avatar">
-                        {showAvatar && (
-                          <div className="message-avatar small">
-                            {recipient?.name?.charAt(0)?.toUpperCase() || "U"}
-                          </div>
-                        )}
+                    {!isMe && showAvatar && (
+                      <div className="message-avatar small">
+                        {recipient?.name?.charAt(0)?.toUpperCase() || "U"}
                       </div>
                     )}
-
-                    {/* Message Bubble */}
                     <div
                       className={`message-bubble ${isMe ? "sent" : "received"}`}
                     >
@@ -216,7 +272,6 @@ export default function ChatRoomPage() {
           </div>
         ))}
 
-        {/* Typing indicator */}
         {isTyping && (
           <div className="typing-indicator">
             <div className="typing-content">

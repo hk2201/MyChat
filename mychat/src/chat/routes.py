@@ -1,4 +1,5 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timezone
+from typing import List
 import uuid
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from sqlmodel import UUID
@@ -42,6 +43,7 @@ async def get_chat_with_user(
 async def websocket_endpoint(
     websocket: WebSocket,
     user_id: UUID = Depends(get_user_id_from_socket),
+    session: AsyncSession = Depends(get_session),
 ):
     await manager.connect(user_id, websocket)
 
@@ -56,17 +58,19 @@ async def websocket_endpoint(
             recipient_id = uuid.UUID(data["recipient_id"])
             content = data["content"]
 
+            aware_utc = datetime.now(timezone.utc)  # timezone-aware UTC datetime
+            naive_utc = aware_utc.replace(tzinfo=None)  # make it naive
             # Save to DB
             # session: AsyncSession = await get_session()
             message = Message(
                 content=content,
                 sender_id=user_id,
                 recipient_id=recipient_id,
-                timestamp=datetime.now(UTC),
+                timestamp=naive_utc,
             )
-            # session.add(message)
-            # await session.commit()
-            # await session.refresh(message)
+            session.add(message)
+            await session.commit()
+            await session.refresh(message)
 
             payload = {
                 "sender_id": str(user_id),
@@ -80,3 +84,11 @@ async def websocket_endpoint(
             print("SUCCESS")
     except WebSocketDisconnect:
         manager.disconnect(user_id)
+
+
+@chat_router.get("/chatted-users")
+async def get_chatted_users(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    return await chat_service.get_all_chatted_users(current_user, session)
