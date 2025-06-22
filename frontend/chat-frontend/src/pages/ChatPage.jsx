@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Search, MessageCircle, LogOut, Mail, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
+
 
 export default function ChatPage() {
   const navigate = useNavigate();
@@ -88,9 +90,31 @@ export default function ChatPage() {
     }
   };
 
-  const handleInvite = () => {
-    alert(`Invite sent to ${search}!`);
-    setSearch("");
+  const handleInvite = async () => {
+    if (!search.trim()) return;
+    console.log(search)
+    try {
+      const token = localStorage.getItem("access_token");
+
+      await axios.post(
+        "https://mychat-brfy.onrender.com/api/v1/auth/invite",
+        {
+          addresses: [search], // Pass email(s) as an array
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      alert(`Invite sent to ${search}!`);
+      setSearch("");
+    } catch (error) {
+      console.error("Failed to send invite:", error);
+      alert("Failed to send invite. Please try again.");
+    }
   };
 
   const handleUserClick = (userId) => {
