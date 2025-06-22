@@ -17,6 +17,7 @@ import uuid
 from datetime import datetime, timedelta
 from .services import UserService
 from .utils import verify_passwd, create_access_token
+from src.config import Config
 
 auth_router = APIRouter()
 user_service = UserService()
@@ -131,9 +132,7 @@ async def send_mail(
 ):
     emails = emails.addresses
     print(current_user.email)
-
-    url = "https://www.jeeva.ai/"
-
+    url = Config.DOMAIN
     message = create_message(
         recipients=emails,
         subject="Join MyChat!!!",
