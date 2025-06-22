@@ -478,8 +478,8 @@ export default function ChatPage() {
               </h3>
               {results.map((user) => (
                 <div
-                  key={user.id}
-                  onClick={() => handleUserClick(user.id)}
+                  key={user.uid}
+                  onClick={() => handleUserClick(user.uid)}
                   style={styles.userCard}
                   className="user-card"
                 >
